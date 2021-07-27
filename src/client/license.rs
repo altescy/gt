@@ -57,7 +57,6 @@ impl Client for LicenseClient {
     }
 }
 
-
 #[cfg(test)]
 mod test {
     use super::*;

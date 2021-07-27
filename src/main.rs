@@ -11,6 +11,8 @@ use client::Client;
 enum GtError {
     #[error("TemplateNotFound: {0}")]
     TemplateNotFound(String),
+    #[error("TargetNotFound: {0}")]
+    TargetNotFound(String),
 }
 
 #[tokio::main]
@@ -19,30 +21,64 @@ async fn main() -> Result<()> {
         (version: "1.0")
         (author: "altescy <altescy@fastmail.com>")
         (about: "Generate template of gitignore / license")
-        (@arg NAME: +required "Sets the name of template")
+        (@arg type: -t --type +takes_value "specify target type")
+        (@subcommand generate =>
+            (about: "generate template of gitignore / license")
+            (@arg NAME: +required "Sets the name of template")
+        )
+        (@subcommand list =>
+            (about: "show the list of available gitignore / license names")
+
+        )
     )
     .get_matches();
 
-    let c = client::UnifiedClient::new(true, true);
+    let mut use_gitignore = false;
+    let mut use_license = false;
 
-    let names = matches.value_of("NAME").unwrap();
-    for name in names.split(",") {
-        if let Some(template) = c.find(name).await? {
-            match template.kind.as_str() {
+    if let Some(targets) = matches.value_of("type") {
+        for target in targets.split(",") {
+            match target {
                 "gitignore" => {
-                    println!("##");
-                    println!("##  {}", &template.name);
-                    println!("##");
-                    println!("");
-                    println!("{}", &template.body);
+                    use_gitignore = true;
                 }
                 "license" => {
-                    println!("{}", &template.body);
+                    use_license = true;
                 }
-                _ => (),
+                _ => Err(GtError::TargetNotFound(String::from(target)))?,
             }
-        } else {
-            Err(GtError::TemplateNotFound(String::from(name)))?;
+        }
+    } else {
+        use_gitignore = true;
+        use_license = true;
+    }
+
+    let c = client::UnifiedClient::new(use_gitignore, use_license);
+
+    if let Some(matches) = matches.subcommand_matches("generate") {
+        let names = matches.value_of("NAME").unwrap();
+        for name in names.split(",") {
+            if let Some(template) = c.find(name).await? {
+                match template.kind.as_str() {
+                    "gitignore" => {
+                        println!("##");
+                        println!("##  {}", &template.name);
+                        println!("##");
+                        println!("");
+                        println!("{}", &template.body);
+                    }
+                    "license" => {
+                        println!("{}", &template.body);
+                    }
+                    _ => (),
+                }
+            } else {
+                Err(GtError::TemplateNotFound(String::from(name)))?;
+            }
+        }
+    } else if let Some(_matches) = matches.subcommand_matches("list") {
+        for name in c.list().await? {
+            println!("{}", &name);
         }
     }
 
