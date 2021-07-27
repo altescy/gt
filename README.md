@@ -7,6 +7,11 @@ GT
 
 Generate template of gitignore / license via [GitHub REST API](https://docs.github.com/en/rest).
 
+## Installation
+
+```
+cargo install --git https://github.com/altescy/gt --tag v1.0.0
+```
 
 ## Usage
 
