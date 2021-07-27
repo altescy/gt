@@ -18,7 +18,7 @@ enum GtError {
 #[tokio::main]
 async fn main() -> Result<()> {
     let matches = clap_app!(gt =>
-        (version: "1.0")
+        (version: "1.0.0")
         (author: "altescy <altescy@fastmail.com>")
         (about: "Generate template of gitignore / license")
         (@arg type: -t --type +takes_value "specify target type")
